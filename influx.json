@@ -1,0 +1,6 @@
+{
+	"Host": "http://influx.passage.cl:8086",
+	"Bucket":  "energy-long",
+	"Organization": "passage",
+	"Token": "DYnFZ5SfeXvqIFs0c3Zbe1UphGtpKGrOoDl8sTym1qtmr3oLPXRXfdwxme1_mmbP5PjK68BjcJUXd1tCkclbeQ=="
+}
