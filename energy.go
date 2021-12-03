@@ -23,14 +23,30 @@ func (du *DailyUse) Weekday() time.Weekday {
 	return du.Day.Weekday()
 }
 
-func (du *DailyUse) isPeak(hour int) bool {
+func (du *DailyUse) getZone(hour int) int {
 	switch du.Weekday() {
 	case time.Sunday:
-		return false
+		return 0
 	case time.Saturday:
-		return false
+		return 0
 	default:
-		return (hour > 6 && hour < 13) || (hour > 15 && hour < 22)
+		if du.Day.Month() > 3 && du.Day.Month() < 10 {
+			if hour > 6 && hour < 13 {
+				return 1
+			}
+			if hour > 18 && hour < 22 {
+				return 2
+			}
+			return 0
+		} else {
+			if hour > 6 && hour < 13 {
+				return 1
+			}
+			if hour > 15 && hour < 21 {
+				return 2
+			}
+			return 0
+		}
 	}
 }
 
@@ -42,26 +58,11 @@ func (du *DailyUse) TotalEnergy() (sum uint64) {
 	return
 }
 
-func (du *DailyUse) OffPeakEnergy() (sum uint64) {
+func (du *DailyUse) EnergyZones() (sum [3]uint64) {
 	for hour, hourly := range du.EnergyHourly {
-		if !du.isPeak(hour) {
-			sum += hourly
-		}
+		sum[du.getZone(hour)] += hourly
 	}
 	return
-}
-
-func (du *DailyUse) PeakEnergy() (sum uint64) {
-	for hour, hourly := range du.EnergyHourly {
-		if du.isPeak(hour) {
-			sum += hourly
-		}
-	}
-	return
-}
-
-func (du *DailyUse) GetPeakPercentage() float64 {
-	return float64(du.PeakEnergy()) / float64(du.TotalEnergy())
 }
 
 type EnergyUse struct {
@@ -106,12 +107,17 @@ func (eu *EnergyUse) GetFromInflux(influx *Influx) error {
 	return nil
 }
 
-func (eu *EnergyUse) GetAveragePeakPercentage() float64 {
-	var totalEnergy uint64
-	var peakEnergy uint64
+func (eu *EnergyUse) GetAveragePercentages() (percentage [3]float64) {
+	var sum [3]uint64
 	for _, daily := range eu.Days {
-		totalEnergy += daily.TotalEnergy()
-		peakEnergy += daily.PeakEnergy()
+		zones := daily.EnergyZones()
+		sum[0] += zones[0]
+		sum[1] += zones[1]
+		sum[2] += zones[2]
 	}
-	return float64(peakEnergy) / float64(totalEnergy) * 100
+	totalSum := sum[0] + sum[1] + sum[2]
+	percentage[0] = float64(sum[0]) / float64(totalSum) * 100
+	percentage[1] = float64(sum[1]) / float64(totalSum) * 100
+	percentage[2] = float64(sum[2]) / float64(totalSum) * 100
+	return
 }

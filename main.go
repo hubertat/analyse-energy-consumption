@@ -30,7 +30,7 @@ func main() {
 
 	now := time.Now()
 	energy := EnergyUse{}
-	energy.Start = time.Date(now.Year(), now.Month(), now.Day()-120, 0, 0, 0, 0, now.Location())
+	energy.Start = time.Date(now.Year(), now.Month(), now.Day()-200, 0, 0, 0, 0, now.Location())
 	energy.Stop = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
 	err = energy.GetFromInflux(influx)
@@ -40,13 +40,13 @@ func main() {
 
 	fmt.Printf("Loaded %d days, from %s to %s\n\n", len(energy.Days), energy.Start.String(), energy.Stop.String())
 
-	fmt.Print("Day: weekday\t: energy total/offpeak/peak\t : peak/off\n")
+	fmt.Print("Day: weekday\t: energy offpeak/peak1/peak2\t : peak1[%]/peak2[%]\n")
 	for _, daily := range energy.Days {
-		total := daily.TotalEnergy()
-		peak := daily.PeakEnergy()
-		off := daily.OffPeakEnergy()
-		fmt.Printf("Day: %v\t:%d %d %d\t%f %f\n", daily.Weekday(), total, off, peak, float64(peak)/float64(total)*100, float64(off)/float64(total)*100)
+		zones := daily.EnergyZones()
+		sum := zones[0] + zones[1] + zones[2]
+		fmt.Printf("Day: %v\t:%d %d %d\t%f %f\n", daily.Weekday(), zones[0], zones[1], zones[2], float64(zones[1])/float64(sum)*100, float64(zones[2])/float64(sum)*100)
 	}
 
-	fmt.Println(energy.GetAveragePeakPercentage())
+	fmt.Println("średnice procentowe udziały stref: [poza szczyt, szczyt 1, szczyt 1]")
+	fmt.Println(energy.GetAveragePercentages())
 }
